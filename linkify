@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -eo pipefail
+
+DOTFILES_DIR="${0%/*}"
+ROOT="${1:-$HOME}"
+
+# Creates symlinks rooted in the user's home directory to
+# each file in dotfiles/home/. This will not remove existing 
+# configuration in the home directory, it will only add to it.
+# For example, if "~/.config/foo" exists in the user's home dir
+# (and not in dotfiles/home), it won't be deleted.
+function create_symlinks {
+  for to in $(find $DOTFILES_DIR/home -type f); do
+    from="$ROOT/${to#$DOTFILES_DIR/home}"
+
+    # check if a file is already there
+    if [ -e "$from" ]; then 
+      echo "path '$(realpath $from)' already exists, refusing to create symlink"
+      continue
+    fi 
+
+    # clear pre-existing symlink if needed
+    if [ -L "$from" ]; then
+      rm "$from"
+    fi
+
+    # create the new symlink
+    mkdir -p $(dirname $from)
+    ln -s $to $from
+  done
+}
+
+create_symlinks
